@@ -1,6 +1,7 @@
 from __future__ import print_function
 import tensorflow as tf
 import numpy as np
+import math
 
 import TensorflowUtils as utils
 import read_MITSceneParsingData as scene_parsing
@@ -127,20 +128,20 @@ def inference(image, keep_prob):
         conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8)
 
         annotation_pred = tf.argmax(conv_t3, dimension=3, name="prediction")
-        reshape = tf.reshape(pool5, [FLAGS.batch_size, -1])
+        reshape = tf.reshape(pool5, [FLAGS.batch_size, 7*7*512])
         dim = reshape.get_shape()[1].value
-        W_fc1 = utils.weight_variable(shape=[dim, 4096], name="W_fc1")
-        b_fc1 = utils.bias_variable([4096], name="b_fc1")
+        W_fc1 = tf.get_variable('W_fc1', shape=[7*7*512, 4096], initializer=tf.truncated_normal_initializer(0.0, 0.015625))
+        b_fc1 = tf.get_variable('b_fc1', shape=[4096], initializer=tf.constant_initializer(0.0))
         fc1 = tf.nn.relu(tf.matmul(reshape, W_fc1) + b_fc1, name="FC")
         fc1 = tf.nn.dropout(fc1, keep_prob)
 
-        W_fc2 = utils.weight_variable(shape=[4096, 4096], name="W_fc2")
-        b_fc2 = utils.bias_variable([4096], name="b_fc2")
+        W_fc2 = tf.get_variable('W_fc2', shape=[4096, 4096], initializer=tf.truncated_normal_initializer(0.0, 0.015625))
+        b_fc2 = tf.get_variable('b_fc2', shape=[4096], initializer=tf.constant_initializer(0.0))
         fc2 = tf.nn.relu(tf.matmul(fc1, W_fc2) + b_fc2, name="FC2")
         fc2 = tf.nn.dropout(fc2, keep_prob)
 
-        W_fc3 = utils.weight_variable(shape=[4096, 2], name="W_fc3")
-        b_fc3 = utils.bias_variable([2], name="b_fc3")
+        W_fc3 = tf.get_variable('W_fc3', shape=[4096, 2], initializer=tf.truncated_normal_initializer(0.0, 0.707))
+        b_fc3 = tf.get_variable('b_fc3', shape=[2], initializer=tf.constant_initializer(0.0))
         fc3 = tf.nn.relu(tf.matmul(fc2, W_fc3) + b_fc3, name="FC3")
         fc3 = tf.nn.dropout(fc3, keep_prob)
 
